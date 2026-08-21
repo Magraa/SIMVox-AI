@@ -10,10 +10,23 @@ from phone_controller import PhoneController
 from audio_router import AudioRouter, list_audio_devices
 from ai_engine import AIEngine
 
+__version__ = "1.0.0"
+
 def print_banner():
     print("=" * 60)
-    print("      Automated AI Calling System (Android + PC)")
+    print(f"      SIMVox AI v{__version__} (Android + PC Telephony)")
     print("=" * 60)
+
+def check_preflight_environment(require_api_key: bool = True) -> bool:
+    """Validates required environment configurations before initiating calls."""
+    if require_api_key:
+        if not GEMINI_API_KEY or GEMINI_API_KEY.strip() in ("your_gemini_api_key_here", "AIzaSyYourGeminiApiKeyHere", ""):
+            print("\n[!] CONFIGURATION WARNING: GEMINI_API_KEY is missing or unconfigured.")
+            print("    Please add your Google Gemini API key to your .env file.")
+            print("    Get a free key from: https://aistudio.google.com/\n")
+            return False
+    return True
+
 
 def handle_list_audio():
     print("\n--- Available Audio Input/Output Devices ---")
@@ -173,6 +186,7 @@ def run_call_session(phone: PhoneController, db: DatabaseManager, router: AudioR
 
 def handle_monitor_mode(phone: PhoneController, db: DatabaseManager, router: AudioRouter, ai: AIEngine):
     """Listens in a continuous loop for incoming Android calls."""
+    check_preflight_environment(require_api_key=True)
     print(f"\n[+] Monitoring for incoming calls in [{phone.mode}] mode... (Press Ctrl+C to stop)")
     if not phone.is_connected():
         print(f"[!] Warning: ADB target [{phone.get_target_device_id() or 'USB'}] not detected. Please verify connection.")
@@ -194,6 +208,9 @@ def handle_monitor_mode(phone: PhoneController, db: DatabaseManager, router: Aud
 
 def handle_outbound_call(phone: PhoneController, db: DatabaseManager, router: AudioRouter, ai: AIEngine, number: str):
     """Initiates an outbound call and runs AI session."""
+    if not check_preflight_environment(require_api_key=True):
+        return
+
     print(f"\n[+] Initiating outbound call to {number} via [{phone.mode}] ADB...")
     if not phone.is_connected():
         print(f"[!] Error: ADB target [{phone.get_target_device_id() or 'USB'}] not connected.")
@@ -222,6 +239,7 @@ def main():
     print_banner()
 
     parser = argparse.ArgumentParser(description="Automated AI Calling System (Android + PC)")
+    parser.add_argument("-v", "--version", action="version", version=f"SIMVox AI v{__version__} (Automated Android + PC Telephony Agent)")
     parser.add_argument("--mode", choices=["usb", "wireless"], help="Switch ADB connection mode (usb or wireless).")
     parser.add_argument("--connect-wireless", type=str, metavar="IP:PORT", help="Connect to Wireless ADB (e.g. 192.168.1.50:5555).")
     parser.add_argument("--pair-wireless", nargs=3, metavar=("IP", "PORT", "CODE"), help="Pair Wireless ADB (e.g. 192.168.1.50 37123 123456).")
@@ -230,7 +248,6 @@ def main():
     parser.add_argument("--monitor", action="store_true", help="Start automatic incoming call listener loop.")
     parser.add_argument("--outbound", type=str, help="Initiate an outbound call to specified phone number.")
     parser.add_argument("--history", action="store_true", help="View recent call transcripts and AI summaries.")
-
     parser.add_argument("--gui", action="store_true", help="Launch native pywebview Desktop UI Panel.")
 
     args = parser.parse_args()
@@ -269,4 +286,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
