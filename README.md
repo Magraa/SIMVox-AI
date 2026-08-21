@@ -198,18 +198,25 @@ python app.py
 
 #### 💻 Or Run from Command Line:
 ```bash
-# 1. Start Auto-Answer Inbound Call Daemon
+# 1. Check Version & Environment
+python main.py --version
+
+# 2. Check Device & Telephony Connection
+python main.py --check-adb
+
+# 3. Start Auto-Answer Inbound Call Daemon
 python main.py --monitor
 
-# 2. Place an Autonomous Outbound Call
+# 4. Place an Autonomous Outbound Call
 python main.py --outbound "+1234567890"
 
-# 3. View Live Call History & CRM Summaries
+# 5. View Live Call History & CRM Summaries
 python main.py --history
 
-# 4. List Available Audio Devices
+# 6. List Available Audio Devices
 python main.py --list-audio
 ```
+
 
 ---
 
