@@ -1,0 +1,14 @@
+google-genai>=0.1.1
+edge-tts>=6.1.9
+sounddevice>=0.4.6
+numpy>=1.24.0
+scipy>=1.10.0
+python-dotenv>=1.0.0
+SpeechRecognition>=3.10.0
+pydub>=0.25.1
+pywebview>=4.0
+pystray>=0.19.4
+Pillow>=9.0.0
+soundfile>=0.12.1
+
+

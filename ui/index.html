@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated AI Calling System - Control Panel</title>
+    <!-- Modern Google Font: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo-icon">📱</div>
+                <div class="brand-text">
+                    <h2>AI Calling</h2>
+                    <span class="version-tag">Control Panel</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-item active" data-tab="tab-studio">
+                    <span class="nav-icon">🎙️</span>
+                    <span class="nav-label">Live Studio</span>
+                </button>
+                <button class="nav-item" data-tab="tab-history">
+                    <span class="nav-icon">📜</span>
+                    <span class="nav-label">Call History</span>
+                </button>
+                <button class="nav-item" data-tab="tab-settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Settings & Persona</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-health">
+                    <span class="status-pulse" id="adb-pulse"></span>
+                    <span id="adb-status-text">ADB Disconnected</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header Bar -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 id="page-title">Live Call Studio</h1>
+                    <span class="subtitle" id="page-subtitle">Real-time telemetry and call dialogue monitor</span>
+                </div>
+
+                <div class="header-right">
+                    <!-- Launch Scrcpy Audio Button -->
+                    <button class="btn btn-glass" id="btn-launch-scrcpy" title="Launch Scrcpy Android audio forwarding stream">
+                        ⚡ Launch Scrcpy Audio
+                    </button>
+
+                    <!-- Wireless ADB Modal Trigger -->
+                    <button class="btn btn-glass" id="btn-open-adb-modal">
+                        📶 ADB Wireless Pair
+                    </button>
+
+                    <!-- AI Mode Switch -->
+                    <div class="monitor-switch-card" id="ai-mode-header-card" style="border: 1px solid rgba(0, 242, 254, 0.3);">
+                        <span class="switch-label" id="ai-mode-header-label">🤖 AI Mode</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-ai-mode-header" checked title="Turn ON for Automated AI, turn OFF for Direct PC Headset Call">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <!-- Auto Monitor Mode Switch -->
+                    <div class="monitor-switch-card">
+                        <span class="switch-label">Auto-Answer Monitor</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-monitor">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+            </header>
+
+            <!-- TAB 1: LIVE STUDIO -->
+            <section class="tab-page active" id="tab-studio">
+                <div class="grid-layout studio-grid">
+                    <!-- Call Telemetry & Active Session Card -->
+                    <div class="glass-card call-card">
+                        <div class="card-header">
+                            <div class="call-state-badge idle" id="call-state-badge">
+                                <span class="badge-dot"></span>
+                                <span id="call-state-text">SYSTEM IDLE</span>
+                            </div>
+                            <div class="call-timer" id="call-timer">00:00</div>
+                        </div>
+
+                        <div class="caller-display">
+                            <div class="avatar-ring idle" id="avatar-ring">
+                                <span class="avatar-icon">📞</span>
+                            </div>
+                            <h3 id="current-caller-number">No Active Call</h3>
+                            <p id="current-call-type">Ready for incoming/outgoing phone calls</p>
+                        </div>
+
+                        <!-- Canvas Audio Visualizer -->
+                        <div class="visualizer-container">
+                            <canvas id="audio-waveform-canvas" width="600" height="100"></canvas>
+                            <div class="channel-indicators">
+                                <span>Caller Input</span>
+                                <span>AI TTS Stream</span>
+                            </div>
+                        </div>
+
+                        <!-- In-Call Actions -->
+                        <div class="call-controls">
+                            <button class="btn btn-danger" id="btn-hangup" disabled>
+                                🛑 Hang Up
+                            </button>
+                            <button class="btn btn-glass" id="btn-intervene-modal">
+                                🗣️ Inject AI Speech
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Outbound Quick Dialer -->
+                    <div class="glass-card dialer-card">
+                        <div class="card-header">
+                            <h3>Outbound Phone Dialer</h3>
+                        </div>
+                        <div class="dialer-input-group">
+                            <input type="text" id="dialer-phone-input" placeholder="+1 (555) 000-0000" autocomplete="off">
+                            <button class="btn btn-primary" id="btn-dial-now" disabled title="Connect phone first">📞 Call Now</button>
+                        </div>
+                        
+                        <div class="form-group dialer-campaign-context">
+                            <label for="dialer-context-input">🎯 Pre-Call Campaign Brief / Prompt Context:</label>
+                            <textarea id="dialer-context-input" rows="3" placeholder="Describe the mission before calling... e.g. Sell our premium calling service. Price: ₹5000/mo. Features: zero-latency, natural voices. Be friendly and professional. Keep replies short."></textarea>
+                        </div>
+
+                        <div class="dialpad-grid">
+                            <button class="dial-key">1</button>
+                            <button class="dial-key">2</button>
+                            <button class="dial-key">3</button>
+                            <button class="dial-key">4</button>
+                            <button class="dial-key">5</button>
+                            <button class="dial-key">6</button>
+                            <button class="dial-key">7</button>
+                            <button class="dial-key">8</button>
+                            <button class="dial-key">9</button>
+                            <button class="dial-key">*</button>
+                            <button class="dial-key">0</button>
+                            <button class="dial-key">#</button>
+                        </div>
+                    </div>
+
+                    <!-- Real-Time Dialogue Stream Feed -->
+                    <div class="glass-card transcript-card full-width">
+                        <div class="card-header">
+                            <h3>Live Dialogue Stream</h3>
+                            <span class="transcript-counter" id="line-counter">0 lines</span>
+                        </div>
+                        <div class="transcript-feed" id="transcript-feed">
+                            <div class="feed-empty-state">
+                                <span>💬 Call transcripts will stream here in real-time.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: CALL HISTORY -->
+            <section class="tab-page" id="tab-history">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <h3>Past Call Records & Summaries</h3>
+                        <button class="btn btn-glass" id="btn-refresh-history">🔄 Refresh</button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Phone Number</th>
+                                    <th>Type</th>
+                                    <th>Start Time</th>
+                                    <th>Duration</th>
+                                    <th>Intent Label</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <tr>
+                                    <td colspan="7" class="text-center">Loading call records...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: SETTINGS & PERSONA -->
+            <section class="tab-page" id="tab-settings">
+                <div class="grid-layout settings-grid">
+                    <!-- AI Master Mode & Direct Headset Card -->
+                    <div class="glass-card full-width" style="grid-column: 1 / -1; border: 1px solid rgba(0, 242, 254, 0.35); background: rgba(11, 15, 23, 0.85);">
+                        <div class="card-header" style="align-items: center;">
+                            <div>
+                                <h3 style="display: flex; align-items: center; gap: 8px;">
+                                    <span id="ai-mode-card-icon">🤖</span>
+                                    <span>AI Engine & Headset Call Mode</span>
+                                </h3>
+                                <p style="font-size: 12px; opacity: 0.85; margin-top: 4px;">
+                                    Turn OFF AI if you want to make direct phone calls using your PC headphone's microphone and speaker.
+                                </p>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span style="font-size: 13px; font-weight: 600; color: var(--primary-cyan);" id="ai-mode-status-text">🤖 AI Engine ENABLED</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="toggle-ai-master" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Direct Headset Audio Routing Options -->
+                        <div id="direct-headset-options" style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <div class="form-group" style="flex: 1; min-width: 240px; margin-bottom: 0;">
+                                <label for="direct-mic-select">🎧 PC Headphone Microphone (Your Voice):</label>
+                                <select id="direct-mic-select">
+                                    <option value="default">-- Default PC Microphone / Headset Mic --</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 240px; margin-bottom: 0;">
+                                <label for="direct-speaker-select">🎧 PC Headphone Speaker (Caller Sound):</label>
+                                <select id="direct-speaker-select">
+                                    <option value="default">-- Default PC Speakers / Headphones --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Persona Configuration -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h3>AI System Persona & Prompt</h3>
+                        </div>
+                        <div class="form-group">
+                            <label for="persona-prompt-input">System Prompt Instructions:</label>
+                            <textarea id="persona-prompt-input" rows="6" placeholder="You are an intelligent, polite AI assistant answering a phone call..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tts-voice-select">AI Voice Character (Kokoro Local & Edge Neural):</label>
+                            <select id="tts-voice-select">
+                                <option value="hi-IN-SwaraNeural">🇮🇳 Swara – Edge Hindi Female</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="audio-input-select">🎤 Microphone / Audio Input Device:</label>
+                            <select id="audio-input-select">
+                                <option value="default">-- Default System Input --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="audio-output-select">🔊 Speaker / Audio Output Device:</label>
+                            <select id="audio-output-select">
+                                <option value="default">-- Default System Output --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-actions">
+                            <button class="btn btn-glass" id="btn-auto-audio">🔌 Auto-Configure VB-Cable</button>
+                            <button class="btn btn-glass" id="btn-test-loopback">🎙️ Test Audio Loopback</button>
+                            <button class="btn btn-glass" id="btn-test-voice">🔊 Preview Voice</button>
+                            <button class="btn btn-primary" id="btn-save-settings">💾 Save Settings</button>
+                        </div>
+                    </div>
+
+                    <!-- Telephony Link Diagnostics Card -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h3>📞 Telephony Audio Diagnostics</h3>
+                        </div>
+                        <div class="form-group" style="margin-top: 10px;">
+                            <label>Test 1: Upstream Audio (PC &rarr; Phone Speaker)</label>
+                            <p style="font-size: 11px; opacity: 0.8; margin-bottom: 8px; line-height: 1.4;">
+                                Plays a repeating voice message on the output channel. Call your phone and check if you can hear the AI speaking.
+                            </p>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-glass" id="btn-start-spk-test" style="flex: 1;">▶ Start Speaker Test</button>
+                                <button class="btn btn-glass" id="btn-stop-spk-test" style="flex: 1;" disabled>⏹ Stop Test</button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                            <label>Test 2: Downstream Audio (Phone Mic &rarr; PC)</label>
+                            <p style="font-size: 11px; opacity: 0.8; margin-bottom: 8px; line-height: 1.4;">
+                                Listens for 3.5 seconds. Blow into your phone's microphone or say "Hello" to check if the PC receives your voice.
+                            </p>
+                            <button class="btn btn-glass" id="btn-run-mic-test" style="width: 100%;">🎙️ Start Mic Capture Test</button>
+                            
+                            <!-- Volume Progress Bar -->
+                            <div id="mic-test-progress-container" style="margin-top: 12px; display: none;">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                                    <span id="mic-test-status-text">Recording... Speak now!</span>
+                                    <span id="mic-test-percent">0%</span>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                                    <div id="mic-test-progress-bar" style="background: var(--accent-emerald); width: 0%; height: 100%; transition: width 0.3s ease;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VB-Audio Loopback Guide Card -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h3>🎙️ Physical Phone & Emulator Audio Setup</h3>
+                        </div>
+                        <div class="info-box setup-guide" style="margin-top: 0;">
+                            <h4>🔁 Routing Audio to/from the Phone</h4>
+                            <p style="font-size: 12px; opacity: 0.8; margin-bottom: 10px; line-height: 1.5;">
+                                Because ADB/USB cannot inject microphone audio into a physical phone call natively, choose one of these setups:
+                            </p>
+                            
+                            <h5 style="color: var(--primary-cyan); font-size: 12px; margin-top: 10px; margin-bottom: 4px;">Option A: Bluetooth (Wireless & Recommended)</h5>
+                            <ul style="margin-bottom: 12px;">
+                                <li>Pair your physical phone to your PC via Bluetooth.</li>
+                                <li>In the dropdowns above, select the <strong>Hands-Free AG Audio</strong> device for both input and output (e.g. <code>[WASAPI] Headset (YourPhone Hands-Free)</code>).</li>
+                                <li>The PC acts as a headset. The AI speaks and hears the call wirelessly!</li>
+                            </ul>
+
+                            <h5 style="color: var(--primary-cyan); font-size: 12px; margin-top: 10px; margin-bottom: 4px;">Option B: Android Emulator (Software-Only)</h5>
+                            <ul style="margin-bottom: 12px;">
+                                <li>Run a dialer app (Linphone/WhatsApp/Skype) inside an Android emulator (LDPlayer, BlueStacks) on this PC.</li>
+                                <li>Install VB-Cable on the PC. Select <code>CABLE Input</code> as Speaker and <code>CABLE Output</code> as Microphone.</li>
+                                <li>Configure the emulator's Microphone setting to record from <code>CABLE Output</code>.</li>
+                            </ul>
+
+                            <h5 style="color: var(--primary-cyan); font-size: 12px; margin-top: 10px; margin-bottom: 4px;">Option C: Physical AUX Cable & TRRS Splitter</h5>
+                            <ul style="margin-bottom: 12px;">
+                                <li>Connect a 3.5mm TRRS auxiliary cable + splitter from the PC soundcard's headphone jack into the phone's headphone jack.</li>
+                                <li>Select your physical PC Microphone/Speakers in the dropdowns.</li>
+                            </ul>
+
+                            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
+                                <h5 style="color: var(--accent-amber); font-size: 12px; margin-bottom: 4px;">🔊 How to hear the AI on PC while using Virtual Cable:</h5>
+                                <p style="font-size: 11px; opacity: 0.8; line-height: 1.4;">
+                                    If using VB-Cable, you won't hear sound on your PC speaker because it goes to the virtual line. To hear it:
+                                    Go to <strong>Windows Sound Control Panel</strong> &rarr; <strong>Recording Tab</strong> &rarr; Right-click <strong>CABLE Output</strong> &rarr; <strong>Properties</strong> &rarr; <strong>Listen Tab</strong> &rarr; Check <strong>"Listen to this device"</strong> and select your PC speakers/headphones.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- ADB Mode & Device Setup -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h3>ADB Telephony Connection</h3>
+                            <button class="btn btn-glass btn-sm" id="btn-refresh-adb-devices">🔄 Scan Devices</button>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>ADB Connection Mode:</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="adb_mode" value="usb" id="radio-mode-usb" checked> USB Debugging</label>
+                                <label><input type="radio" name="adb_mode" value="wireless" id="radio-mode-wireless"> Wireless Debugging (Wi-Fi)</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="adb-device-select">Target Android Device:</label>
+                            <select id="adb-device-select">
+                                <option value="">-- Auto-Detect Physical Phone --</option>
+                            </select>
+                        </div>
+
+                        <div class="adb-status-banner" id="adb-status-banner">
+                            <span id="adb-status-banner-text">Checking ADB connection...</span>
+                        </div>
+
+                        <!-- USB Quick-Action Buttons -->
+                        <div class="adb-action-row">
+                            <button class="btn btn-primary" id="btn-usb-connect">
+                                🔌 Connect via USB
+                            </button>
+                            <button class="btn btn-glass" id="btn-restart-adb">
+                                ♻️ Restart ADB Server
+                            </button>
+                        </div>
+
+                        <div class="info-box setup-guide">
+                            <h4>📲 Android USB Setup Instructions</h4>
+                            <ol>
+                                <li>Connect your Android phone to PC via USB cable.</li>
+                                <li>Open <strong>Settings &gt; About Phone</strong> &amp; tap <strong>Build Number 7 times</strong>.</li>
+                                <li>Go to <strong>Settings &gt; System / Developer Options</strong> &amp; turn ON <strong>USB Debugging</strong>.</li>
+                                <li>Check your phone screen for: <em>"Allow USB Debugging?"</em> &rarr; Check <strong>"Always allow"</strong> &amp; tap <strong>OK</strong>.</li>
+                                <li>Click <strong>"Connect via USB"</strong> above or tap <strong>"Restart ADB Server"</strong> if stuck.</li>
+                            </ol>
+                        </div>
+                    </div>
+
+
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: Wireless ADB Pairing -->
+    <div class="modal-overlay" id="modal-adb">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Pair Wireless ADB (Android 11+)</h3>
+                <button class="close-btn" id="btn-close-adb-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Phone IP Address:</label>
+                    <input type="text" id="adb-ip" placeholder="192.168.1.50">
+                </div>
+                <div class="form-group">
+                    <label>Pairing Port & Code:</label>
+                    <div class="flex-row">
+                        <input type="text" id="adb-port" placeholder="37123">
+                        <input type="text" id="adb-code" placeholder="123456">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-glass" id="btn-pair-adb">Pair Device</button>
+                <button class="btn btn-primary" id="btn-connect-adb">Connect Wireless</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Speech Injection -->
+    <div class="modal-overlay" id="modal-intervene">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Inject Custom AI Speech</h3>
+                <button class="close-btn" id="btn-close-intervene-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Type text for AI to speak immediately:</label>
+                    <input type="text" id="intervene-text-input" placeholder="e.g. Please hold on for a moment while I check that for you.">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="btn-send-intervene">🗣️ Speak Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Call Record Detail & Audio Player -->
+    <div class="modal-overlay" id="modal-history-detail">
+        <div class="modal-card wide">
+            <div class="modal-header">
+                <h3 id="detail-modal-title">Call Record #</h3>
+                <button class="close-btn" id="btn-close-detail-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-summary-card">
+                    <h4>AI Call Summary</h4>
+                    <p id="detail-summary-text">No summary available.</p>
+                </div>
+
+                <!-- Call Recording Audio Player -->
+                <div class="audio-player-card" id="audio-player-container">
+                    <h4>🎙️ Call Audio Recording Playback</h4>
+                    <audio id="call-audio-player" controls style="width: 100%; margin-top: 10px;"></audio>
+                </div>
+
+                <h4>Full Dialogue Transcript</h4>
+                <div class="transcript-feed modal-feed" id="detail-transcript-feed"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
