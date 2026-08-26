@@ -1,6 +1,6 @@
 <div align="center">
 
-# 📱⚡ CALLVOX AI
+# 📱⚡ SIMVOX AI
 ### **Autonomous Real-Time AI Calling Agent for Physical Android Smartphones & Desktop**
 
 *Turn any Android phone with a SIM card into an autonomous, ultra-low-latency AI Voice Agent powered by Google Gemini, Edge-TTS, and ADB.*
@@ -13,7 +13,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-informational?style=for-the-badge)](#)
 
 <p align="center">
-  <img src="https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif" alt="CallVox Live Audio Visualizer" width="700px" style="border-radius: 12px; box-shadow: 0 8px 32px rgba(0,242,254,0.25);" />
+  <img src="https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif" alt="SIMVox Live Audio Visualizer" width="700px" style="border-radius: 12px; box-shadow: 0 8px 32px rgba(0,242,254,0.25);" />
 </p>
 
 [✨ Key Features](#-key-features) •
@@ -32,7 +32,7 @@
 
 Most AI phone calling systems require **costly cloud telephony services** (Twilio, Vonage, Plivo, SIP trunks) with per-minute fees, regulatory caller-ID verification hurdles, and carrier restrictions.
 
-**CallVox AI bypasses all VoIP aggregators entirely.** It bridges your PC directly to an **Android Smartphone** using hardware audio channels and ADB (Android Debug Bridge). Your AI agent answers and places real cellular phone calls directly through your standard mobile SIM plan with zero carrier fees!
+**SIMVox AI bypasses all VoIP aggregators entirely.** It bridges your PC directly to an **Android Smartphone** using hardware audio channels and ADB (Android Debug Bridge). Your AI agent answers and places real cellular phone calls directly through your standard mobile SIM plan with zero carrier fees!
 
 ```
       ╔══════════════════════════════════════════════════════════════════╗
@@ -132,8 +132,8 @@ To conduct bidirectional phone conversations, audio is bridged between the Andro
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/CallVox-AI.git
-cd CallVox-AI
+git clone https://github.com/YOUR_USERNAME/SIMVox-AI.git
+cd SIMVox-AI
 
 # Create virtual environment
 python -m venv venv
@@ -226,7 +226,7 @@ The built-in desktop control panel offers full real-time telemetry and control:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  ⚡ CALLVOX AI  │  Device: [● Pixel 8 Pro - Connected]  │  Status: [IDLE]   │
+│  ⚡ SIMVOX AI  │  Device: [● Pixel 8 Pro - Connected]  │  Status: [IDLE]   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │   [ 📞 DIALER ]           [ 🎙️ AUDIO VISUALIZER ]        [ 📜 LIVE TRANSCRIPT]│
