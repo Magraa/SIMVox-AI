@@ -4,7 +4,7 @@ import argparse
 import os
 from typing import List, Dict, Any
 
-from config import logger, GEMINI_API_KEY
+from config import logger, GEMINI_API_KEY, AI_PROVIDER, ZAI_API_KEY
 from database import DatabaseManager
 from phone_controller import PhoneController
 from audio_router import AudioRouter, list_audio_devices
@@ -20,11 +20,18 @@ def print_banner():
 def check_preflight_environment(require_api_key: bool = True) -> bool:
     """Validates required environment configurations before initiating calls."""
     if require_api_key:
-        if not GEMINI_API_KEY or GEMINI_API_KEY.strip() in ("your_gemini_api_key_here", "AIzaSyYourGeminiApiKeyHere", ""):
-            print("\n[!] CONFIGURATION WARNING: GEMINI_API_KEY is missing or unconfigured.")
-            print("    Please add your Google Gemini API key to your .env file.")
-            print("    Get a free key from: https://aistudio.google.com/\n")
-            return False
+        if AI_PROVIDER == "zai":
+            if not ZAI_API_KEY or ZAI_API_KEY.strip() in ("your_zai_api_key_here", ""):
+                print("\n[!] CONFIGURATION WARNING: ZAI_API_KEY is missing or unconfigured.")
+                print("    Please add your Z.ai API key to your .env file.")
+                print("    Get a key from: https://z.ai/manage-apikey/apikey-list\n")
+                return False
+        else:
+            if not GEMINI_API_KEY or GEMINI_API_KEY.strip() in ("your_gemini_api_key_here", "AIzaSyYourGeminiApiKeyHere", ""):
+                print("\n[!] CONFIGURATION WARNING: GEMINI_API_KEY is missing or unconfigured.")
+                print("    Please add your Google Gemini API key to your .env file.")
+                print("    Get a free key from: https://aistudio.google.com/\n")
+                return False
     return True
 
 

@@ -26,6 +26,12 @@ logger = logging.getLogger("AICalling")
 
 # API Keys
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+ZAI_API_KEY = os.getenv("ZAI_API_KEY", "")
+
+# LLM Provider Selection ("gemini" or "zai")
+AI_PROVIDER = os.getenv("AI_PROVIDER", "zai" if ZAI_API_KEY else "gemini").lower()
+ZAI_MODEL = os.getenv("ZAI_MODEL", "glm-5.3")
+ZAI_BASE_URL = os.getenv("ZAI_BASE_URL", "https://api.z.ai/api/coding/paas/v4")
 
 # Audio Configuration
 AUDIO_INPUT_DEVICE = os.getenv("AUDIO_INPUT_DEVICE", "default")

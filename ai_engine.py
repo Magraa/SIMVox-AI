@@ -7,8 +7,12 @@ import speech_recognition as sr
 import edge_tts
 from google import genai
 from google.genai import types
+from zai import ZaiClient
 
-from config import GEMINI_API_KEY, AI_PERSONA, TTS_VOICE, logger
+from config import (
+    GEMINI_API_KEY, AI_PERSONA, TTS_VOICE, logger,
+    AI_PROVIDER, ZAI_API_KEY, ZAI_MODEL, ZAI_BASE_URL,
+)
 
 # ---- Kokoro TTS lazy loader (imported only if installed) ----
 _kokoro_pipeline = None
@@ -57,22 +61,41 @@ VOICE_CATALOGUE = [
 class AIEngine:
     """Orchestrates STT, Gemini LLM, and multi-engine TTS (Kokoro + Edge-TTS)."""
 
-    def __init__(self, api_key: str = GEMINI_API_KEY, persona: str = AI_PERSONA, voice: str = TTS_VOICE):
+    def __init__(
+        self,
+        api_key: str = GEMINI_API_KEY,
+        persona: str = AI_PERSONA,
+        voice: str = TTS_VOICE,
+        provider: str = AI_PROVIDER,
+    ):
         self.api_key = api_key
         self.persona = persona
         self.voice = voice
+        self.provider = provider.lower()
         self.recognizer = sr.Recognizer()
 
         # Determine engine from voice id
         self._resolve_engine(voice)
 
-        # Initialize Gemini Client
-        if self.api_key:
-            self.genai_client = genai.Client(api_key=self.api_key)
-            logger.info("Gemini API Client initialized successfully.")
+        self.genai_client = None
+        self.zai_client = None
+
+        if self.provider == "zai":
+            if ZAI_API_KEY:
+                self.zai_client = ZaiClient(api_key=ZAI_API_KEY, base_url=ZAI_BASE_URL)
+                logger.info("Z.ai LLM Client initialized successfully (model=%s, base_url=%s).", ZAI_MODEL, ZAI_BASE_URL)
+            else:
+                logger.warning("AI_PROVIDER=zai but ZAI_API_KEY is not set. LLM responses will use fallback rules.")
         else:
-            self.genai_client = None
-            logger.warning("GEMINI_API_KEY is not set. LLM responses will use fallback rules.")
+            if self.api_key:
+                self.genai_client = genai.Client(api_key=self.api_key)
+                logger.info("Gemini API Client initialized successfully.")
+            else:
+                logger.warning("GEMINI_API_KEY is not set. LLM responses will use fallback rules.")
+
+    @property
+    def _llm_ready(self) -> bool:
+        return self.genai_client is not None or self.zai_client is not None
 
     def _resolve_engine(self, voice_id: str):
         """Sets self.engine and self.voice based on the given voice ID."""
@@ -139,48 +162,59 @@ class AIEngine:
         if not user_message:
             return "I didn't quite catch that. Could you please repeat?"
 
-        if not self.genai_client:
+        if not self._llm_ready:
             return "Thank you for calling. I am an automated assistant. How can I assist you today?"
 
+        active_persona = system_prompt or self.persona
+
+        # Build conversation history block (last 6 turns only for speed)
+        history_text = ""
+        for turn in conversation_history[-6:]:
+            history_text += f"{turn['speaker']}: {turn['message']}\n"
+
+        # Inject pre-call mission context if provided
+        context_block = ""
+        if call_context and call_context.strip():
+            context_block = (
+                f"\n[CALL MISSION BRIEF - Follow this context strictly]:\n"
+                f"{call_context.strip()}\n"
+            )
+
+        prompt = (
+            f"{active_persona}"
+            f"{context_block}\n"
+            f"Recent Conversation:\n{history_text}\n"
+            f"Caller: {user_message}\n"
+            f"AI (1-2 short sentences only, natural phone speech):"
+        )
+
         try:
-            active_persona = system_prompt or self.persona
-
-            # Build conversation history block (last 6 turns only for speed)
-            history_text = ""
-            for turn in conversation_history[-6:]:
-                history_text += f"{turn['speaker']}: {turn['message']}\n"
-
-            # Inject pre-call mission context if provided
-            context_block = ""
-            if call_context and call_context.strip():
-                context_block = (
-                    f"\n[CALL MISSION BRIEF - Follow this context strictly]:\n"
-                    f"{call_context.strip()}\n"
-                )
-
-            prompt = (
-                f"{active_persona}"
-                f"{context_block}\n"
-                f"Recent Conversation:\n{history_text}\n"
-                f"Caller: {user_message}\n"
-                f"AI (1-2 short sentences only, natural phone speech):"
-            )
-
-            response = self.genai_client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
+            if self.zai_client:
+                completion = self.zai_client.chat.completions.create(
+                    model=ZAI_MODEL,
+                    messages=[{"role": "user", "content": prompt}],
                     temperature=0.75,
-                    max_output_tokens=80  # Short responses = faster TTS + more natural conversation
+                    max_tokens=200,
+                    reasoning_effort="low",
                 )
-            )
+                ai_text = (completion.choices[0].message.content or "").strip()
+            else:
+                response = self.genai_client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.75,
+                        max_output_tokens=80  # Short responses = faster TTS + more natural conversation
+                    )
+                )
+                ai_text = response.text.strip() if response.text else ""
 
-            ai_text = response.text.strip() if response.text else "I understand. Could you tell me more?"
+            ai_text = ai_text or "I understand. Could you tell me more?"
             logger.info("Generated AI Response: '%s'", ai_text)
             return ai_text
 
         except Exception as e:
-            logger.error("Gemini API generation error: %s", str(e))
+            logger.error("%s API generation error: %s", self.provider, str(e))
             return "I apologize, I'm having a little trouble right now."
 
     # ------------------------------------------------------------------
@@ -284,7 +318,7 @@ class AIEngine:
         if not transcripts:
             return "No conversation recorded.", "Unknown"
 
-        if not self.genai_client:
+        if not self._llm_ready:
             full_text = " ".join([f"{t['speaker']}: {t['message']}" for t in transcripts])
             return f"Call record: {full_text[:200]}...", "General Inquiry"
 
@@ -295,16 +329,29 @@ class AIEngine:
                 "1. 'summary': A concise 2-3 sentence summary of what was discussed and agreed upon.\n"
                 "2. 'intent': A short label (e.g. Appointment Booking, Sales Inquiry, Customer Support, Spam, Follow-up).\n\n"
                 f"Transcript:\n{transcript_formatted}\n"
-            )
-
-            response = self.genai_client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(response_mime_type="application/json")
+                "Respond with JSON only."
             )
 
             import json
-            data = json.loads(response.text) if response.text else {}
+
+            if self.zai_client:
+                completion = self.zai_client.chat.completions.create(
+                    model=ZAI_MODEL,
+                    messages=[{"role": "user", "content": prompt}],
+                    response_format={"type": "json_object"},
+                    max_tokens=400,
+                    reasoning_effort="low",
+                )
+                raw_text = completion.choices[0].message.content or "{}"
+            else:
+                response = self.genai_client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(response_mime_type="application/json")
+                )
+                raw_text = response.text if response.text else "{}"
+
+            data = json.loads(raw_text)
             summary = data.get("summary", "Summary unavailable.")
             intent = data.get("intent", "General")
             logger.info("Call Summary Generated: Intent='%s'", intent)
